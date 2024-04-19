@@ -79,7 +79,37 @@ def print_cant_move(n:list)->bool:
         return 0
     return 1
 def mover(run:int,x:int,y:int,can:list,types:int)->int:
+    global white_king_pos,black_king_pos,field
+    # not for a king
+    forbiden=[]
+    print(can)
+    save=field[(x,y)]
+    for i in range(len(can)):
+        #print(field[(x,y)],field[(can[i][0],can[i][1])])
+        field[(x,y)],field[(can[i][0],can[i][1])]=field[(can[i][0],can[i][1])],field[(x,y)]
+        if save[1]=='w':checker=before_check(white_king_pos[0],white_king_pos[1])
+        else:checker=before_check(black_king_pos[0],black_king_pos[1])
+        field[(x,y)],field[(can[i][0],can[i][1])]=field[(can[i][0],can[i][1])],field[(x,y)]
+        if checker:forbiden.append((can[i][0],can[i][1]))
+        else:
+            pygame.draw.circle(screen,gray,[can[i][0]+50,can[i][1]+50],25)
+            pygame.display.update()
+        #print(field[(x,y)],field[(can[i][0],can[i][1])])
+    moved=0
+    while run:
+        for event in pygame.event.get():
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button==1:
+                clicked=pygame.mouse.get_pos()
+                get=clicked_where(clicked[0],clicked[1])
+                if (get in can) and not (get in forbiden):
+                    field[get]=[types,field[(x,y)][1],1]
+                    field[(x,y)]=[-1,'',0]
+                    moved=1
+                run=0
+    return moved
+def mover_for_king(run:int,x:int,y:int,can:list,types:int)->int:
     global white_king_pos,black_king_pos
+    
     moved=0
     while run:
         for event in pygame.event.get():
@@ -103,7 +133,6 @@ def mover(run:int,x:int,y:int,can:list,types:int)->int:
                             elif get==(100,700):
                                 field[(200,700)]=[1,field[(0,700)][1],1]
                                 field[(0,700)]=[-1,'',0]
-                        #make king's mover func not using mover func
                             black_king_pos=[get[0],get[1]]
                     field[get]=[types,field[(x,y)][1],1]
                     field[(x,y)]=[-1,'',0]
@@ -126,15 +155,16 @@ def p_move(x:int,y:int,moved:int)->int:
         if i in [2,3]:
             if field[(nx,ny)][0]!=-1 and field[(nx,ny)][1]!=field[(x,y)][1]:
                 can.append((nx,ny))
-                pygame.draw.circle(screen,gray,[nx+50,ny+50],25)
+                #pygame.draw.circle(screen,gray,[nx+50,ny+50],25)
             continue
         if field[(nx,ny)][0]==-1:
             if i==1 and field[(nx,y-100)][0]!=-1:continue
             can.append((nx,ny))
-            pygame.draw.circle(screen,gray,[nx+50,ny+50],25)
+            #pygame.draw.circle(screen,gray,[nx+50,ny+50],25)
     pygame.display.update()
     run=print_cant_move(can)
     return mover(run,x,y,can,0)
+
 def k_move(x:int,y:int)->int:
     global field
     dx=[100,100,100,-100,-100,-100,0,0]
@@ -152,9 +182,11 @@ def k_move(x:int,y:int)->int:
     if field[(x,y)][2]==0:
         c1,c2=1,1
         for i in range(x+100,700,100):
-            if field[(i,y)][0]!=-1:c1=0
+            if field[(i,y)][0]!=-1:
+                c1=0
         for i in range(100,x,100):
-            if field[(i,y)][0]!=-1:c2=0
+            if field[(i,y)][0]!=-1:
+                c2=0
         if field[(x,y)][1]=='w':
             if c1:can.append((600,700));pygame.draw.circle(screen,gray,[650,750],25)
             if c2:can.append((200,700));pygame.draw.circle(screen,gray,[250,750],25)
@@ -165,8 +197,7 @@ def k_move(x:int,y:int)->int:
 
     pygame.display.update()
     run=print_cant_move(can)
-    return mover(run,x,y,can,5)
-    #i need to make castle ing ing ing but latter i finished implement the rook movement
+    return mover_for_king(run,x,y,can,5)
 def r_move(x:int,y:int)->int:
     dx=[1,-1,0,0]
     dy=[0,0,1,-1]
@@ -180,11 +211,11 @@ def r_move(x:int,y:int)->int:
             if nx<0 or ny<0 or nx>700 or ny>700:continue
             if field[(nx,ny)][0]==-1 and eat:
                 can.append((nx,ny))
-                pygame.draw.circle(screen,gray,[nx+50,ny+50],25)
+                #pygame.draw.circle(screen,gray,[nx+50,ny+50],25)
             else:
                 if field[(nx,ny)][1]!=field[(x,y)][1] and eat:
                     can.append((nx,ny))
-                    pygame.draw.circle(screen,gray,[nx+50,ny+50],25)
+                    #pygame.draw.circle(screen,gray,[nx+50,ny+50],25)
                     eat=0
                 elif field[(nx,ny)][1]==field[(x,y)][1] and j!=0:break
     pygame.display.update()
@@ -200,10 +231,10 @@ def n_move(x:int,y:int)->int:
         if nx<0 or ny<0 or nx>700 or ny>700:continue
         if field[(nx,ny)][0]==-1:
             can.append((nx,ny))
-            pygame.draw.circle(screen,gray,[nx+50,ny+50],25)
+            #pygame.draw.circle(screen,gray,[nx+50,ny+50],25)
         elif field[(nx,ny)][1]!=field[(x,y)][1]:
             can.append((nx,ny))
-            pygame.draw.circle(screen,gray,[nx+50,ny+50],25)
+            #pygame.draw.circle(screen,gray,[nx+50,ny+50],25)
     pygame.display.update()
     run=print_cant_move(can)
     return mover(run,x,y,can,2)
@@ -219,11 +250,11 @@ def b_move(x:int,y:int)->int:
             if nx<0 or ny<0 or nx>700 or ny>700:continue
             if field[(nx,ny)][0]==-1 and eat:
                 can.append((nx,ny))
-                pygame.draw.circle(screen,gray,[nx+50,ny+50],25)
+                #pygame.draw.circle(screen,gray,[nx+50,ny+50],25)
             else:
                 if field[(nx,ny)][1]!=field[(x,y)][1] and eat:
                     can.append((nx,ny))
-                    pygame.draw.circle(screen,gray,[nx+50,ny+50],25)
+                    #pygame.draw.circle(screen,gray,[nx+50,ny+50],25)
                     eat=0
                 elif field[(nx,ny)][1]==field[(x,y)][1] and j!=0:break
     pygame.display.update()
@@ -242,11 +273,11 @@ def q_move(x:int,y:int)->int:
             if nx<0 or ny<0 or nx>700 or ny>700:continue
             if field[(nx,ny)][0]==-1 and eat:
                 can.append((nx,ny))
-                pygame.draw.circle(screen,gray,[nx+50,ny+50],25)
+                #pygame.draw.circle(screen,gray,[nx+50,ny+50],25)
             else:
                 if field[(nx,ny)][1]!=field[(x,y)][1] and eat:
                     can.append((nx,ny))
-                    pygame.draw.circle(screen,gray,[nx+50,ny+50],25)
+                    #pygame.draw.circle(screen,gray,[nx+50,ny+50],25)
                     eat=0
                 elif field[(nx,ny)][1]==field[(x,y)][1] and j!=0:break
     pygame.display.update()
