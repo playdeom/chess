@@ -109,6 +109,7 @@ def mover(run:int,x:int,y:int,can:list,types:int)->int:
     return moved
 def mover_for_king(run:int,x:int,y:int,can:list,types:int)->int:
     global white_king_pos,black_king_pos
+    #here u have to make some funcs enjoy :)
     
     moved=0
     while run:
