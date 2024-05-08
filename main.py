@@ -51,11 +51,15 @@ def show_click(get:tuple)->None:
             screen.blit(black[arr[0]],[x,y])
 def flip_board()->None:
     global field,white_king_pos,black_king_pos
+    make_board()
+    pygame.display.update()
     for i in range(0,800,100):
         for j in range(0,400,100):
             field[(i,j)],field[(700-i,700-j)]=field[(700-i,700-j)],field[(i,j)]
     white_king_pos=[700-white_king_pos[0],700-white_king_pos[1]]
     black_king_pos=[700-black_king_pos[0],700-black_king_pos[1]]
+    import time
+    time.sleep(0.5)
 
 def clicked_where(x:int,y:int)->tuple:
     fix_pos=[100,200,300,400,500,600,700,800]
@@ -84,15 +88,15 @@ def mover(run:int,x:int,y:int,can:list,types:int)->int:
     forbiden=[]
     print(can)
     save=field[(x,y)]
-    for i in range(len(can)):
+    for nx,ny in can:
         #print(field[(x,y)],field[(can[i][0],can[i][1])])
-        field[(x,y)],field[(can[i][0],can[i][1])]=field[(can[i][0],can[i][1])],field[(x,y)]
+        field[(x,y)],field[(nx,ny)]=field[(nx,ny)],field[(x,y)]
         if save[1]=='w':checker=before_check(white_king_pos[0],white_king_pos[1])
         else:checker=before_check(black_king_pos[0],black_king_pos[1])
-        field[(x,y)],field[(can[i][0],can[i][1])]=field[(can[i][0],can[i][1])],field[(x,y)]
-        if checker:forbiden.append((can[i][0],can[i][1]))
+        field[(x,y)],field[(nx,ny)]=field[(nx,ny)],field[(x,y)]
+        if checker:forbiden.append((nx,ny))
         else:
-            pygame.draw.circle(screen,gray,[can[i][0]+50,can[i][1]+50],25)
+            pygame.draw.circle(screen,gray,[nx+50,ny+50],25)
             pygame.display.update()
         #print(field[(x,y)],field[(can[i][0],can[i][1])])
     moved=0
@@ -110,14 +114,33 @@ def mover(run:int,x:int,y:int,can:list,types:int)->int:
 def mover_for_king(run:int,x:int,y:int,can:list,types:int)->int:
     global white_king_pos,black_king_pos
     #here u have to make some funcs enjoy :)
-    
+    forbiden=[]
+    print(can)
+    save=field[(x,y)]
+    for nx,ny in can:
+        ss=field[(nx,ny)]
+        field[(x,y)],field[(nx,ny)]=[-1,'',0],field[(x,y)]
+        if save[1]=='w':
+            white_king_pos=[nx,ny]
+            checker=before_check(white_king_pos[0],white_king_pos[1])
+            white_king_pos=[x,y]
+        else:
+            black_king_pos=[nx,ny]
+            checker=before_check(black_king_pos[0],black_king_pos[1])
+            black_king_pos=[x,y]
+        field[(x,y)],field[(nx,ny)]=field[(nx,ny)],ss
+        if checker:forbiden.append((nx,ny))
+        else:
+            pygame.draw.circle(screen,gray,[nx+50,ny+50],25)
+            pygame.display.update()
+    print(forbiden)
     moved=0
     while run:
         for event in pygame.event.get():
             if event.type == pygame.MOUSEBUTTONDOWN and event.button==1:
                 clicked=pygame.mouse.get_pos()
                 get=clicked_where(clicked[0],clicked[1])
-                if get in can:
+                if get in can and not get in forbiden:
                     if types==5 and field[(x,y)][2]==0:
                         if field[(x,y)][1]=='w':
                             if get==(600,700):
@@ -126,7 +149,6 @@ def mover_for_king(run:int,x:int,y:int,can:list,types:int)->int:
                             elif get==(200,700):
                                 field[(300,700)]=[1,field[(0,700)][1],1]
                                 field[(0,700)]=[-1,'',0]
-                            white_king_pos=[get[0],get[1]]
                         else:
                             if get==(500,700):
                                 field[(400,700)]=[1,field[(700,700)][1],1]
@@ -134,7 +156,8 @@ def mover_for_king(run:int,x:int,y:int,can:list,types:int)->int:
                             elif get==(100,700):
                                 field[(200,700)]=[1,field[(0,700)][1],1]
                                 field[(0,700)]=[-1,'',0]
-                            black_king_pos=[get[0],get[1]]
+                    if field[(x,y)][1]=='w':white_king_pos=[get[0],get[1]]
+                    if field[(x,y)][1]=='b':black_king_pos=[get[0],get[1]]
                     field[get]=[types,field[(x,y)][1],1]
                     field[(x,y)]=[-1,'',0]
                     moved=1
@@ -165,7 +188,6 @@ def p_move(x:int,y:int,moved:int)->int:
     pygame.display.update()
     run=print_cant_move(can)
     return mover(run,x,y,can,0)
-
 def k_move(x:int,y:int)->int:
     global field
     dx=[100,100,100,-100,-100,-100,0,0]
@@ -176,10 +198,10 @@ def k_move(x:int,y:int)->int:
         if nx<0 or ny<0 or nx>700 or ny>700:continue
         if field[(nx,ny)][0]==-1:
             can.append((nx,ny))
-            pygame.draw.circle(screen,gray,[nx+50,ny+50],25)
+            #pygame.draw.circle(screen,gray,[nx+50,ny+50],25)
         elif field[(nx,ny)][1]!=field[(x,y)][1]:
             can.append((nx,ny))
-            pygame.draw.circle(screen,gray,[nx+50,ny+50],25)
+            #pygame.draw.circle(screen,gray,[nx+50,ny+50],25)
     if field[(x,y)][2]==0:
         c1,c2=1,1
         for i in range(x+100,700,100):
@@ -189,11 +211,11 @@ def k_move(x:int,y:int)->int:
             if field[(i,y)][0]!=-1:
                 c2=0
         if field[(x,y)][1]=='w':
-            if c1:can.append((600,700));pygame.draw.circle(screen,gray,[650,750],25)
-            if c2:can.append((200,700));pygame.draw.circle(screen,gray,[250,750],25)
+            if c1 and field[(700,700)]==[1,'w',0]:can.append((600,700));pygame.draw.circle(screen,gray,[650,750],25)
+            if c2 and field[(0,700)]==[1,'w',0]:can.append((200,700));pygame.draw.circle(screen,gray,[250,750],25)
         elif field[(x,y)][1]=='b':
-            if c1:can.append((500,700));pygame.draw.circle(screen,gray,[550,750],25)
-            if c2:can.append((100,700));pygame.draw.circle(screen,gray,[150,750],25)
+            if c1 and field[(700,700)]==[1,'b',0]:can.append((500,700));pygame.draw.circle(screen,gray,[550,750],25)
+            if c2 and field[(0,700)]==[1,'b',0]:can.append((100,700));pygame.draw.circle(screen,gray,[150,750],25)
 
 
     pygame.display.update()
@@ -292,26 +314,28 @@ def before_check(x:int,y:int) -> bool:
     dx=[1,-1,0,0,1,1,-1,-1]
     dy=[0,0,1,-1,-1,1,-1,1]
     for i in range(4): # check rook and queen
-        for j in range(0,800,100):
-            if j==0:continue
+        for j in range(100,800,100):
             nx=x+dx[i]*j
             ny=y+dy[i]*j
             if nx<0 or ny<0 or nx>700 or ny>700:continue
             if field[(nx,ny)][1]!=field[(x,y)][1]:
                 if field[(nx,ny)][0] in [1,4]:
-                    #print(f'check by 1 or 4')
+                    print(f'now checked by {nx},{ny}')
+                    print(f'check by 1 or 4')
                     return 1
+                else:break
             else:break
     for i in range(4,8): # check bisup and queen
-        for j in range(0,800,100):
-            if j==0:continue
+        for j in range(100,800,100):
             nx=x+dx[i]*j
             ny=y+dy[i]*j
             if nx<0 or ny<0 or nx>700 or ny>700:continue
             if field[(nx,ny)][1]!=field[(x,y)][1]:
                 if field[(nx,ny)][0] in [3,4]:
-                    #print(f'check by 3 or 4')
+                    print(f'now checked by {nx},{ny}')
+                    print(f'check by 3 or 4')
                     return 1
+                else:break
             else:break
     dx=[100,100,200,200,-100,-100,-200,-200]
     dy=[200,-200,100,-100,200,-200,100,-100]
@@ -321,7 +345,8 @@ def before_check(x:int,y:int) -> bool:
         if nx<0 or ny<0 or nx>700 or ny>700:continue
         if field[(nx,ny)][0]==2:
             if field[(nx,ny)][1]!=field[(x,y)][1]:
-                #print(f'check by 2')
+                print(f'now checked by {nx},{ny}')
+                print(f'check by 2')
                 return 1
     return 0
 def now_check(x:int,y:int) -> bool:
@@ -333,7 +358,8 @@ def now_check(x:int,y:int) -> bool:
         if nx<0 or ny<0 or nx>700 or ny>700:continue
         if field[(nx,ny)][0]==0:
             if field[(nx,ny)][1]!=field[(x,y)][1]:
-                #print(f'check by 0')
+                print(f'now checked by {nx},{ny}')
+                print(f'check by 0')
                 return 1
     return 0
 
@@ -344,7 +370,7 @@ def now_check(x:int,y:int) -> bool:
 # under here is main loop
 
 run=1
-turn=1 # 1: white, 0: black
+turn=1 # 1: white, 0: black,  1: down, 0: up for white
 #if turn is end, then borad is swaped in 180 degree
 white_king_pos,black_king_pos=[400,700],[400,0]
 white_king_check,black_king_check=0,0
@@ -374,7 +400,10 @@ while run:
                     moved=q_move(get[0],get[1])
                 if now_f[0]==5:
                     moved=k_move(get[0],get[1])
-                if moved:turn=0;flip_board()
+                if moved:
+                    turn=0
+                    flip_board()
+                    black_king_check=now_check(black_king_pos[0],black_king_pos[1])
             elif turn==0 and now_f[1]=='b':
                 moved=0
                 show_click(get)
@@ -390,11 +419,12 @@ while run:
                     moved=q_move(get[0],get[1])
                 if now_f[0]==5:
                     moved=k_move(get[0],get[1])
-                if moved:turn=1;flip_board()
-            black_king_check=before_check(black_king_pos[0],black_king_pos[1])
-            white_king_check=before_check(white_king_pos[0],white_king_pos[1])
-            black_king_check=max(black_king_check,now_check(black_king_pos[0],black_king_pos[1]))
-            white_king_check=max(white_king_check,now_check(white_king_pos[0],white_king_pos[1]))
+                if moved:
+                    turn=1
+                    flip_board()
+                    white_king_check=now_check(white_king_pos[0],white_king_pos[1])
+            white_king_check=max(white_king_check,before_check(white_king_pos[0],white_king_pos[1]))
+            black_king_check=max(black_king_check,before_check(black_king_pos[0],black_king_pos[1]))
             print(f'clicked: {get}')
             print(f'types: {now_f}')
             print(f'white king: {white_king_pos} ',end='')
