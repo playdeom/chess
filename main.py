@@ -187,6 +187,7 @@ def p_move(x:int,y:int,moved:int)->int:
     pygame.display.update()
     run=print_cant_move(can)
     return mover(run,x,y,can,0)
+
 def k_move(x:int,y:int)->int:
     global field
     dx=[100,100,100,-100,-100,-100,0,0]
@@ -216,10 +217,10 @@ def k_move(x:int,y:int)->int:
             if c1 and field[(700,700)]==[1,'b',0]:can.append((500,700));pygame.draw.circle(screen,gray,[550,750],25)
             if c2 and field[(0,700)]==[1,'b',0]:can.append((100,700));pygame.draw.circle(screen,gray,[150,750],25)
 
-
     pygame.display.update()
     run=print_cant_move(can)
     return mover_for_king(run,x,y,can,5)
+
 def r_move(x:int,y:int)->int:
     dx=[1,-1,0,0]
     dy=[0,0,1,-1]
@@ -243,6 +244,7 @@ def r_move(x:int,y:int)->int:
     pygame.display.update()
     run=print_cant_move(can)
     return mover(run,x,y,can,1)
+
 def n_move(x:int,y:int)->int:
     dx=[100,100,200,200,-100,-100,-200,-200]
     dy=[200,-200,100,-100,200,-200,100,-100]
@@ -260,6 +262,7 @@ def n_move(x:int,y:int)->int:
     pygame.display.update()
     run=print_cant_move(can)
     return mover(run,x,y,can,2)
+
 def b_move(x:int,y:int)->int:
     dx=[1,1,-1,-1]
     dy=[-1,1,-1,1]
@@ -282,6 +285,7 @@ def b_move(x:int,y:int)->int:
     pygame.display.update()
     run=print_cant_move(can)
     return mover(run,x,y,can,3)
+
 def q_move(x:int,y:int)->int:
     dx=[1,-1,0,0,1,1,-1,-1]
     dy=[0,0,1,-1,-1,1,-1,1]
