@@ -36,7 +36,6 @@ gray=(150,150,150)
 yellow=(255,255,153)
 def make_board()->None:
     screen.blit(board,[0,0])
-    
     for (x,y),arr in field.items():
         if arr[1]=='w':
             screen.blit(white[arr[0]],[x,y])
@@ -319,24 +318,32 @@ def before_check(x:int,y:int) -> bool:
             ny=y+dy[i]*j
             if nx<0 or ny<0 or nx>700 or ny>700:continue
             if field[(nx,ny)][1]!=field[(x,y)][1]:
+                #print(f'(r,q) now checking pos : {nx,ny}, king pos : {x,y}')
                 if field[(nx,ny)][0] in [1,4]:
                     print(f'now checked by {nx},{ny}')
                     print(f'check by 1 or 4')
                     return 1
-                else:break
+                elif field[(nx,ny)][1]!='':break
             else:break
+                
     for i in range(4,8): # check bisup and queen
         for j in range(100,800,100):
             nx=x+dx[i]*j
             ny=y+dy[i]*j
+            #print(nx-x,ny-y)
+            # pygame.draw.circle(screen,(255,0,0),[nx+50,ny+50],25)
+            # pygame.display.flip()
             if nx<0 or ny<0 or nx>700 or ny>700:continue
+            #print("checker: ",nx,ny)
             if field[(nx,ny)][1]!=field[(x,y)][1]:
+                #print(f'(b,q) now checking pos : {nx,ny}, king pos : {x,y}')
                 if field[(nx,ny)][0] in [3,4]:
                     print(f'now checked by {nx},{ny}')
                     print(f'check by 3 or 4')
                     return 1
-                else:break
+                elif field[(nx,ny)][1]!='':break
             else:break
+
     dx=[100,100,200,200,-100,-100,-200,-200]
     dy=[200,-200,100,-100,200,-200,100,-100]
     for i in range(8): # check knight
@@ -349,6 +356,7 @@ def before_check(x:int,y:int) -> bool:
                 print(f'check by 2')
                 return 1
     return 0
+
 def now_check(x:int,y:int) -> bool:
     dx=[100,-100]
     dy=[-100,-100]
@@ -373,7 +381,6 @@ run=1
 turn=1 # 1: white, 0: black,  1: down, 0: up for white
 #if turn is end, then borad is swaped in 180 degree
 white_king_pos,black_king_pos=[400,700],[400,0]
-white_king_check,black_king_check=0,0
 #to check check where is king 
 while run:
     clock.tick(fps)
@@ -385,6 +392,7 @@ while run:
             get=clicked_where(clicked[0],clicked[1])
             # check empty place
             now_f=field[(get[0],get[1])]
+            white_king_check,black_king_check=0,0 # reset
             if turn==1 and now_f[1]=='w':
                 moved=0
                 show_click(get)
@@ -423,6 +431,7 @@ while run:
                     turn=1
                     flip_board()
                     white_king_check=now_check(white_king_pos[0],white_king_pos[1])
+                    
             white_king_check=max(white_king_check,before_check(white_king_pos[0],white_king_pos[1]))
             black_king_check=max(black_king_check,before_check(black_king_pos[0],black_king_pos[1]))
             print(f'clicked: {get}')
