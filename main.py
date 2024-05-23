@@ -34,6 +34,7 @@ for i in range(0,800,100):
 # fix click pos
 gray=(150,150,150)
 yellow=(255,255,153)
+red=(255,0,0)
 def make_board()->None:
     screen.blit(board,[0,0])
     for (x,y),arr in field.items():
@@ -41,6 +42,7 @@ def make_board()->None:
             screen.blit(white[arr[0]],[x,y])
         elif arr[1]=='b':
             screen.blit(black[arr[0]],[x,y])
+
 def show_click(get:tuple)->None:
     pygame.draw.rect(screen,yellow,[get[0],get[1]+2,100,100])
     for (x,y),arr in field.items():
@@ -48,6 +50,7 @@ def show_click(get:tuple)->None:
             screen.blit(white[arr[0]],[x,y])
         elif arr[1]=='b':
             screen.blit(black[arr[0]],[x,y])
+
 def flip_board()->None:
     global field,white_king_pos,black_king_pos
     make_board()
@@ -81,6 +84,37 @@ def print_cant_move(n:list)->bool:
         pygame.time.delay(500)
         return 0
     return 1
+
+def endgame(color):
+    font=pygame.font.Font(None,100)
+    if color=='w':color='White'
+    else: color='Black'
+    out=font.render(f"END, {color} Win The Game!",True,(0,0,0))
+    out_make=out.get_rect()
+    out_make.centerx=400
+    out_make.centery=400
+    screen.blit(out,out_make)
+    pygame.display.update()
+    pygame.time.delay(2000)
+    pygame.quit()
+
+def checkcheck(x:int,y:int,can:list,types:int):
+    global white_king_pos,black_king_pos,field
+    # not for a king
+    forbiden=[]
+    print(can)
+    save=field[(x,y)]
+    for nx,ny in can:
+        #print(field[(x,y)],field[(can[i][0],can[i][1])])
+        field[(x,y)],field[(nx,ny)]=field[(nx,ny)],field[(x,y)]
+        if save[1]=='w':checker=before_check(white_king_pos[0],white_king_pos[1])
+        else:checker=before_check(black_king_pos[0],black_king_pos[1])
+        field[(x,y)],field[(nx,ny)]=field[(nx,ny)],field[(x,y)]
+        if checker:forbiden.append((nx,ny))
+        #print(field[(x,y)],field[(can[i][0],can[i][1])])
+    if len(forbiden)==len(can):return 0
+    return 1
+
 def mover(run:int,x:int,y:int,can:list,types:int)->int:
     global white_king_pos,black_king_pos,field
     # not for a king
@@ -110,9 +144,9 @@ def mover(run:int,x:int,y:int,can:list,types:int)->int:
                     moved=1
                 run=0
     return moved
+
 def mover_for_king(run:int,x:int,y:int,can:list,types:int)->int:
-    global white_king_pos,black_king_pos
-    #here u have to make some funcs enjoy :)
+    global white_king_pos,black_king_pos,field
     forbiden=[]
     print(can)
     save=field[(x,y)]
@@ -121,18 +155,41 @@ def mover_for_king(run:int,x:int,y:int,can:list,types:int)->int:
         field[(x,y)],field[(nx,ny)]=[-1,'',0],field[(x,y)]
         if save[1]=='w':
             white_king_pos=[nx,ny]
-            checker=before_check(white_king_pos[0],white_king_pos[1])
+            checker=max(now_check(white_king_pos[0],white_king_pos[1]),
+                        before_check(white_king_pos[0],white_king_pos[1]))
             white_king_pos=[x,y]
         else:
             black_king_pos=[nx,ny]
-            checker=before_check(black_king_pos[0],black_king_pos[1])
+            checker=max(now_check(black_king_pos[0],black_king_pos[1]),
+                        before_check(black_king_pos[0],black_king_pos[1]))
             black_king_pos=[x,y]
         field[(x,y)],field[(nx,ny)]=field[(nx,ny)],ss
         if checker:forbiden.append((nx,ny))
         else:
             pygame.draw.circle(screen,gray,[nx+50,ny+50],25)
             pygame.display.update()
-    print(forbiden)
+    print(forbiden,checker)
+    if len(forbiden)==len(can) and checker==1:
+        pygame.draw.rect(screen,red,[x,y+2,100,100])
+        isgood=1 #1 is good 0 is bad
+        for (x,y),arr in field.items():
+            if arr[1]==field[(x,y)][1]:
+                if arr[0]==0:
+                    lis_to_move=p_move(x,y,field[(x,y)][2],1)
+                elif arr[0]==1:
+                    lis_to_move=r_move(x,y,1)
+                elif arr[0]==2:
+                    lis_to_move=n_move(x,y,1)
+                elif arr[0]==3:
+                    lis_to_move=b_move(x,y,1)
+                elif arr[0]==4:
+                    lis_to_move=q_move(x,y,1)
+                isgood=checkcheck(x,y,lis_to_move,arr[0])
+            if isgood==0:break
+        if isgood==0:
+            endgame(field[(x,y)][1])
+
+
     moved=0
     while run:
         for event in pygame.event.get():
@@ -163,7 +220,7 @@ def mover_for_king(run:int,x:int,y:int,can:list,types:int)->int:
                 run=0
     return moved
 
-def p_move(x:int,y:int,moved:int)->int:
+def p_move(x:int,y:int,moved:int,isdanger:int)->int:
     #pown guide line two dots when pown moved value is 0 or one dot in front of pown
     global field
     dx=[0,0,-100,100]
@@ -184,9 +241,8 @@ def p_move(x:int,y:int,moved:int)->int:
             if i==1 and field[(nx,y-100)][0]!=-1:continue
             can.append((nx,ny))
             #pygame.draw.circle(screen,gray,[nx+50,ny+50],25)
-    pygame.display.update()
-    run=print_cant_move(can)
-    return mover(run,x,y,can,0)
+    if isdanger:return can
+    return cat(run,x,y,can,0)
 
 def k_move(x:int,y:int)->int:
     global field
@@ -221,7 +277,7 @@ def k_move(x:int,y:int)->int:
     run=print_cant_move(can)
     return mover_for_king(run,x,y,can,5)
 
-def r_move(x:int,y:int)->int:
+def r_move(x:int,y:int,isdanger:int)->int:
     dx=[1,-1,0,0]
     dy=[0,0,1,-1]
     can=[]
@@ -241,11 +297,10 @@ def r_move(x:int,y:int)->int:
                     #pygame.draw.circle(screen,gray,[nx+50,ny+50],25)
                     eat=0
                 elif field[(nx,ny)][1]==field[(x,y)][1] and j!=0:break
-    pygame.display.update()
-    run=print_cant_move(can)
-    return mover(run,x,y,can,1)
+    if isdanger:return can
+    return cat(run,x,y,can,1)
 
-def n_move(x:int,y:int)->int:
+def n_move(x:int,y:int,isdanger:int)->int:
     dx=[100,100,200,200,-100,-100,-200,-200]
     dy=[200,-200,100,-100,200,-200,100,-100]
     can=[]
@@ -259,11 +314,10 @@ def n_move(x:int,y:int)->int:
         elif field[(nx,ny)][1]!=field[(x,y)][1]:
             can.append((nx,ny))
             #pygame.draw.circle(screen,gray,[nx+50,ny+50],25)
-    pygame.display.update()
-    run=print_cant_move(can)
-    return mover(run,x,y,can,2)
+    if isdanger:return can
+    return cat(run,x,y,can,2)
 
-def b_move(x:int,y:int)->int:
+def b_move(x:int,y:int,isdanger:int)->int:
     dx=[1,1,-1,-1]
     dy=[-1,1,-1,1]
     can=[]
@@ -282,11 +336,10 @@ def b_move(x:int,y:int)->int:
                     #pygame.draw.circle(screen,gray,[nx+50,ny+50],25)
                     eat=0
                 elif field[(nx,ny)][1]==field[(x,y)][1] and j!=0:break
-    pygame.display.update()
-    run=print_cant_move(can)
-    return mover(run,x,y,can,3)
+    if isdanger:return can
+    return cat(run,x,y,can,3)
 
-def q_move(x:int,y:int)->int:
+def q_move(x:int,y:int,isdanger:int)->int:
     dx=[1,-1,0,0,1,1,-1,-1]
     dy=[0,0,1,-1,-1,1,-1,1]
     can=[]
@@ -306,9 +359,8 @@ def q_move(x:int,y:int)->int:
                     #pygame.draw.circle(screen,gray,[nx+50,ny+50],25)
                     eat=0
                 elif field[(nx,ny)][1]==field[(x,y)][1] and j!=0:break
-    pygame.display.update()
-    run=print_cant_move(can)
-    return mover(run,x,y,can,4)
+    if isdanger:return can
+    return cat(run,x,y,can,4)
 
 def before_check(x:int,y:int) -> bool:
     #check when any piece move
@@ -375,7 +427,9 @@ def now_check(x:int,y:int) -> bool:
                 return 1
     return 0
 
-
+def cat(run:int,x:int,y:int,can:list,types:int):
+    run=print_cant_move(can)
+    return mover(run,x,y,can,types)
 
 
 
@@ -401,15 +455,15 @@ while run:
                 moved=0
                 show_click(get)
                 if now_f[0]==0:
-                    moved=p_move(get[0],get[1],now_f[2])
+                    moved=p_move(get[0],get[1],now_f[2],0)
                 if now_f[0]==1:
-                    moved=r_move(get[0],get[1])
+                    moved=r_move(get[0],get[1],0)
                 if now_f[0]==2:
-                    moved=n_move(get[0],get[1])
+                    moved=n_move(get[0],get[1],0)
                 if now_f[0]==3:
-                    moved=b_move(get[0],get[1])
+                    moved=b_move(get[0],get[1],0)
                 if now_f[0]==4:
-                    moved=q_move(get[0],get[1])
+                    moved=q_move(get[0],get[1],0)
                 if now_f[0]==5:
                     moved=k_move(get[0],get[1])
                 if moved:
@@ -420,17 +474,17 @@ while run:
                 moved=0
                 show_click(get)
                 if now_f[0]==0:
-                    moved=p_move(get[0],get[1],now_f[2])
+                    moved=p_move(get[0],get[1],now_f[2],0)
                 if now_f[0]==1:
-                    moved=r_move(get[0],get[1])
+                    moved=r_move(get[0],get[1],0)
                 if now_f[0]==2:
-                    moved=n_move(get[0],get[1])
+                    moved=n_move(get[0],get[1],0)
                 if now_f[0]==3:
-                    moved=b_move(get[0],get[1])
+                    moved=b_move(get[0],get[1],0)
                 if now_f[0]==4:
-                    moved=q_move(get[0],get[1])
+                    moved=q_move(get[0],get[1],0)
                 if now_f[0]==5:
-                    moved=k_move(get[0],get[1])
+                    moved=k_move(get[0],get[1],0)
                 if moved:
                     turn=1
                     flip_board()
@@ -444,6 +498,8 @@ while run:
             print(f'black king: {black_king_pos}',)
             print(f'ischeck black: {black_king_check}')
             print(f'ischeck white: {white_king_check}\n')
+            if white_king_check==1:
+                pass
     make_board()
     pygame.display.update()
 pygame.quit()
