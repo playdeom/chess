@@ -1,5 +1,4 @@
 import pygame
-
 pygame.init()
 WIDTH=800
 HEIGHT=800
@@ -17,7 +16,8 @@ screen=pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 fps=60
 
-field=dict() # (x -> int, y -> int) : [which -> int, color -> str, moved -> int]
+field=dict()
+# (x -> int, y -> int) : [which -> int, color -> str, moved -> int]
 # which is number of pieces in "types" array
 for i in range(0,800,100):
     for j in range(0,800,100):
